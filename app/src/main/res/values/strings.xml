@@ -18,9 +18,18 @@
 
     <!-- Server activity -->
     <string name="server_number_of_scan_records">Number of scan records:</string>
-    <string name="server_size_of_scan_record">Size of scan record:</string>
-    <string name="server_connection_status">Connection status:</string>
-    <string name="server_connection_status_connected">Connected</string>
-    <string name="server_connection_status_disconnected">Disconnected</string>
+    <string name="server_size_of_scan_record">Size of scan record (bytes):</string>
     <string name="server_transfer_scans">Transfer scan records</string>
+
+    <!-- Client activity -->
+    <string name="client_number_of_days">Number of days to generate keys for:</string>
+    <string name="client_number_of_advertisements">Number of advertisements per day:</string>
+    <string name="client_size_of_advertisement">Size of advertisement (bytes):</string>
+    <string name="client_mtu_size">MTU size (bytes):</string>
+    <string name="client_transfer_advertisements">Transfer advertisements</string>
+
+    <!-- Shared -->
+    <string name="connection_status">Connection status:</string>
+    <string name="connection_status_connected">Connected</string>
+    <string name="connection_status_disconnected">Disconnected</string>
 </resources>

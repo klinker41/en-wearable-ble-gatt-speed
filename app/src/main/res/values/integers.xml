@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <!-- Server activity -->
     <integer name="server_min_scan_records">0</integer>
     <integer name="server_max_scan_records">2000</integer>
     <integer name="server_default_scan_records">1000</integer>
@@ -7,4 +8,19 @@
     <integer name="server_max_record_size">31</integer>
     <integer name="server_default_record_size">31</integer>
     <integer name="server_step_size">1</integer>
+
+    <!-- Client activity -->
+    <integer name="client_min_number_of_days">1</integer>
+    <integer name="client_max_number_of_days">14</integer>
+    <integer name="client_default_number_of_days">3</integer>
+    <integer name="client_min_number_of_advertisements_per_day">1</integer>
+    <integer name="client_max_number_of_advertisements_per_day">288</integer>
+    <integer name="client_default_number_of_advertisements_per_day">144</integer>
+    <integer name="client_min_size_of_advertisement">16</integer>
+    <integer name="client_max_size_of_advertisement">31</integer>
+    <integer name="client_default_size_of_advertisement">20</integer>
+    <integer name="client_min_mtu_size">23</integer>
+    <integer name="client_max_mtu_size">512</integer>
+    <integer name="client_default_mtu_size">512</integer>
+    <integer name="client_step_size">1</integer>
 </resources>

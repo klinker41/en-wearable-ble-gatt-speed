@@ -4,7 +4,6 @@ import android.os.Bundle;
 import android.view.View;
 import android.widget.TextView;
 
-import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.google.android.material.slider.Slider;
@@ -42,14 +41,14 @@ public class ServerActivity  extends AppCompatActivity {
     }
 
     private void initializeSliders() {
-        numberOfScanRecordsSlider
-                .addOnChangeListener(((slider, value, fromUser) ->
-                        setLabelValue(numberOfScanRecordsLabel, slider.getValue())));
-        sizeOfScanRecordsSlider
-                .addOnChangeListener(((slider, value, fromUser) ->
-                        setLabelValue(sizeOfScanRecordsLabel, slider.getValue())));
-        setLabelValue(numberOfScanRecordsLabel, numberOfScanRecordsSlider.getValue());
-        setLabelValue(sizeOfScanRecordsLabel, sizeOfScanRecordsSlider.getValue());
+        attachSliderListener(numberOfScanRecordsSlider, numberOfScanRecordsLabel);
+        attachSliderListener(sizeOfScanRecordsSlider, sizeOfScanRecordsLabel);
+    }
+
+    private void attachSliderListener(Slider slider, TextView label) {
+        slider.addOnChangeListener(
+                ((s, value, fromUser) -> setLabelValue(label, slider.getValue())));
+        setLabelValue(label, slider.getValue());
     }
 
     private void setLabelValue(TextView label, float value) {
