@@ -6,7 +6,7 @@
     android:layout_height="match_parent"
     android:orientation="vertical"
     android:padding="@dimen/activity_padding"
-    tools:context=".server.ServerActivity">
+    tools:context=".client.ClientActivity">
 
     <LinearLayout
         android:layout_width="match_parent"
@@ -135,7 +135,8 @@
         android:layout_height="wrap_content"
         android:text="@string/client_transfer_advertisements"
         android:enabled="false"
-        android:onClick="initiateAdvertisementTransfer"/>
+        android:onClick="initiateAdvertisementTransfer"
+        android:id="@+id/initiate_transfer"/>
 
     <ScrollView
         android:layout_width="match_parent"
