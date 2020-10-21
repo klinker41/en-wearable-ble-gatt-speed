@@ -4,6 +4,93 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:padding="@dimen/activity_padding"
     tools:context=".server.ServerActivity">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal">
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/server_number_of_scan_records"/>
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:paddingStart="@dimen/text_view_label_padding"
+            android:paddingEnd="@dimen/text_view_label_padding"
+            android:id="@+id/number_scan_records"/>
+    </LinearLayout>
+
+    <com.google.android.material.slider.Slider
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:valueFrom="@integer/server_min_scan_records"
+        android:valueTo="@integer/server_max_scan_records"
+        android:value="@integer/server_default_scan_records"
+        android:stepSize="@integer/server_step_size"
+        android:paddingBottom="@dimen/slider_padding"
+        android:id="@+id/number_scan_records_slider"/>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal">
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/server_size_of_scan_record"/>
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:paddingStart="@dimen/text_view_label_padding"
+            android:paddingEnd="@dimen/text_view_label_padding"
+            android:id="@+id/scan_record_size"/>
+    </LinearLayout>
+
+    <com.google.android.material.slider.Slider
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:valueFrom="@integer/server_min_record_size"
+        android:valueTo="@integer/server_max_record_size"
+        android:stepSize="@integer/server_step_size"
+        android:value="@integer/server_default_record_size"
+        android:paddingBottom="@dimen/slider_padding"
+        android:id="@+id/scan_record_size_slider"/>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:paddingBottom="@dimen/text_view_label_padding"
+        android:orientation="horizontal">
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/server_connection_status"/>
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:paddingStart="@dimen/text_view_label_padding"
+            android:paddingEnd="@dimen/text_view_label_padding"
+            android:text="@string/server_connection_status_disconnected"
+            android:id="@+id/connection_status"/>
+    </LinearLayout>
+
+    <Button
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="@string/server_transfer_scans"
+        android:onClick="initiateScanRecordTransfer"/>
+
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:id="@+id/log"/>
+    </ScrollView>
 
 </LinearLayout>

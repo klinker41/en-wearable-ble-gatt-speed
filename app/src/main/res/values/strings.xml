@@ -15,4 +15,12 @@
     </string>
     <string name="launch_server">Start as server (ie, wearable role)</string>
     <string name="launch_client">Start as client (ie, phone role)</string>
+
+    <!-- Server activity -->
+    <string name="server_number_of_scan_records">Number of scan records:</string>
+    <string name="server_size_of_scan_record">Size of scan record:</string>
+    <string name="server_connection_status">Connection status:</string>
+    <string name="server_connection_status_connected">Connected</string>
+    <string name="server_connection_status_disconnected">Disconnected</string>
+    <string name="server_transfer_scans">Transfer scan records</string>
 </resources>

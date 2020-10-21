@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <integer name="server_min_scan_records">0</integer>
+    <integer name="server_max_scan_records">2000</integer>
+    <integer name="server_default_scan_records">1000</integer>
+    <integer name="server_min_record_size">0</integer>
+    <integer name="server_max_record_size">31</integer>
+    <integer name="server_default_record_size">31</integer>
+    <integer name="server_step_size">1</integer>
+</resources>
