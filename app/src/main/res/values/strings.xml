@@ -1,0 +1,18 @@
+<resources>
+    <!-- Activity labels -->
+    <string name="app_name">WENS Test</string>
+    <string name="server_name">Server</string>
+    <string name="client_name">Client</string>
+
+    <!-- Main activity -->
+    <string name="service_overview">
+        This app is used to test GATT transfer speeds for Exposure Notification specific operations.
+        One device should be configured as the server and the other as the client.\n\nOn the client
+        side, you\'ll scan for the server and when it is found, press the connect button. You can
+        then decide to transfer scanned RPIs from the server to the client, or send advertisement
+        packets from the client to the server.\n\nTransfer speeds will be measured and output on
+        both the client and server for each operation.
+    </string>
+    <string name="launch_server">Start as server (ie, wearable role)</string>
+    <string name="launch_client">Start as client (ie, phone role)</string>
+</resources>
