@@ -78,14 +78,6 @@
             android:id="@+id/connection_status"/>
     </LinearLayout>
 
-    <Button
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="@string/server_transfer_scans"
-        android:enabled="false"
-        android:onClick="initiateScanRecordTransfer"
-        android:id="@+id/initiate_transfer"/>
-
     <ScrollView
         android:layout_width="match_parent"
         android:layout_height="match_parent">

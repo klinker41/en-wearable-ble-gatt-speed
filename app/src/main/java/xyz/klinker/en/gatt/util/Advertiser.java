@@ -2,6 +2,14 @@ package xyz.klinker.en.gatt.util;
 
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
+import android.bluetooth.BluetoothGatt;
+import android.bluetooth.BluetoothGattCharacteristic;
+import android.bluetooth.BluetoothGattDescriptor;
+import android.bluetooth.BluetoothGattServer;
+import android.bluetooth.BluetoothGattServerCallback;
+import android.bluetooth.BluetoothGattService;
+import android.bluetooth.BluetoothManager;
+import android.bluetooth.BluetoothProfile;
 import android.bluetooth.le.AdvertiseCallback;
 import android.bluetooth.le.AdvertiseData;
 import android.bluetooth.le.AdvertiseSettings;
@@ -21,6 +29,7 @@ public class Advertiser {
     private final Context context;
     @Nullable private AdvertiseCallback platformCallback;
     @Nullable private AdvertiserCallback callback;
+    @Nullable private BluetoothGattServer server;
 
     public Advertiser(Context context) {
         this.context = context;
@@ -46,7 +55,7 @@ public class Advertiser {
                     public void onStartSuccess(AdvertiseSettings settingsInEffect) {
                         super.onStartSuccess(settingsInEffect);
                         callback.onAdvertisingStarted();
-                        // TODO(jklinker): Start GATT server.
+                        createGattServer();
                     }
 
                     @Override
@@ -69,25 +78,148 @@ public class Advertiser {
     }
 
     public void stopAdvertising() {
-        if (platformCallback == null) {
-            return;
+        if (server != null) {
+            server.close();
+            server = null;
         }
-        BluetoothAdapter.getDefaultAdapter()
-                .getBluetoothLeAdvertiser()
-                .stopAdvertising(platformCallback);
-        platformCallback = null;
-        if (callback == null) {
-            return;
+        if (platformCallback != null) {
+            BluetoothAdapter.getDefaultAdapter()
+                    .getBluetoothLeAdvertiser()
+                    .stopAdvertising(platformCallback);
+            platformCallback = null;
         }
-        callback.onAdvertisingStopped();
-        callback = null;
+        if (callback != null) {
+            callback.onAdvertisingStopped();
+        }
+    }
+
+    private void createGattServer() {
+        BluetoothManager manager =
+                (BluetoothManager) context.getSystemService(Context.BLUETOOTH_SERVICE);
+        BluetoothGattServer server =
+                manager.openGattServer(context, new AdvertiserGattServerCallback(callback));
+        BluetoothGattService service =
+                new BluetoothGattService(
+                        SERVICE_UUID.getUuid(), BluetoothGattService.SERVICE_TYPE_PRIMARY);
+        // TODO(jklinker): Add characteristics.
+        server.addService(service);
+        callback.onGattCreated();
+    }
+
+    private class AdvertiserGattServerCallback extends BluetoothGattServerCallback {
+
+        private AdvertiserCallback callback;
+
+        private AdvertiserGattServerCallback(AdvertiserCallback callback) {
+            this.callback = callback;
+        }
+
+        @Override
+        public void onConnectionStateChange(BluetoothDevice device, int status, int newState) {
+            callback.onGattOperation(
+                    device,
+                    "connectionStateChange",
+                    "status: " + status + ", newState " + newState);
+            switch (newState) {
+                case BluetoothProfile.STATE_CONNECTING:
+                    callback.onGattConnecting(device);
+                    break;
+                case BluetoothProfile.STATE_CONNECTED:
+                    callback.onGattConnected(device);
+                    break;
+                case BluetoothProfile.STATE_DISCONNECTED:
+                    callback.onGattDisconnected(device);
+                    break;
+            }
+        }
+
+        @Override
+        public void onServiceAdded(int status, BluetoothGattService service) {
+            callback.onGattOperation(null, "serviceAdded", service.getUuid().toString());
+        }
+
+        @Override
+        public void onCharacteristicReadRequest(
+                BluetoothDevice device,
+                int requestId,
+                int offset,
+                BluetoothGattCharacteristic characteristic) {
+            callback.onGattOperation(
+                    device, "characteristicReadRequest", characteristic.getUuid().toString());
+        }
+
+        @Override
+        public void onCharacteristicWriteRequest(
+                BluetoothDevice device,
+                int requestId,
+                BluetoothGattCharacteristic characteristic,
+                boolean preparedWrite,
+                boolean responseNeeded,
+                int offset,
+                byte[] value) {
+            callback.onGattOperation(
+                    device, "characteristicWriteRequest", characteristic.getUuid().toString());
+        }
+
+        @Override
+        public void onDescriptorReadRequest(
+                BluetoothDevice device,
+                int requestId,
+                int offset,
+                BluetoothGattDescriptor descriptor) {
+            callback.onGattOperation(
+                    device, "descriptorReadRequest", descriptor.getUuid().toString());
+        }
+
+        @Override
+        public void onDescriptorWriteRequest(
+                BluetoothDevice device,
+                int requestId,
+                BluetoothGattDescriptor descriptor,
+                boolean preparedWrite,
+                boolean responseNeeded,
+                int offset,
+                byte[] value) {
+            callback.onGattOperation(
+                    device, "descriptorWrite", descriptor.getUuid().toString());
+        }
+
+        @Override
+        public void onExecuteWrite(BluetoothDevice device, int requestId, boolean execute) {
+            callback.onGattOperation(device, "executeWrite", Boolean.toString(execute));
+        }
+
+        @Override
+        public void onNotificationSent(BluetoothDevice device, int status) {
+            callback.onGattOperation(device, "notificationSent", Integer.toString(status));
+        }
+
+        @Override
+        public void onMtuChanged(BluetoothDevice device, int mtu) {
+            callback.onGattOperation(device, "mtuChanged", Integer.toString(mtu));
+        }
+
+        @Override
+        public void onPhyUpdate(BluetoothDevice device, int txPhy, int rxPhy, int status) {
+            callback.onGattOperation(
+                    device, "phyUpdate", txPhy + ", " + rxPhy + ", " + status);
+        }
+
+        @Override
+        public void onPhyRead(BluetoothDevice device, int txPhy, int rxPhy, int status) {
+            callback.onGattOperation(
+                    device, "phyRead", txPhy + ", " + rxPhy + ", " + status);
+        }
     }
 
     public interface AdvertiserCallback {
         void onAdvertisingStarted();
         void onAdvertisingFailed(int errorCode);
         void onAdvertisingStopped();
+        void onGattCreated();
+        void onGattConnecting(BluetoothDevice device);
         void onGattConnected(BluetoothDevice device);
+        void onGattOperation(BluetoothDevice device, String operation, String value);
         void onGattDisconnected(BluetoothDevice device);
     }
 }

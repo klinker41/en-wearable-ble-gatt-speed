@@ -1,5 +1,6 @@
 package xyz.klinker.en.gatt.util;
 
+import android.app.Activity;
 import android.util.Log;
 import android.widget.TextView;
 
@@ -7,10 +8,12 @@ import java.text.SimpleDateFormat;
 
 public class Logger {
 
+    private Activity activity;
     private String tag;
     private TextView logView;
 
-    public Logger(String tag, TextView logView) {
+    public Logger(Activity activity, String tag, TextView logView) {
+        this.activity = activity;
         this.tag = tag;
         this.logView = logView;
     }
@@ -40,11 +43,13 @@ public class Logger {
     }
 
     private void toLogView(String string) {
-        logView.append(
-                String.format(
-                        "\n%s: %s",
-                        SimpleDateFormat.getTimeInstance(SimpleDateFormat.MEDIUM)
-                                .format(System.currentTimeMillis()),
-                        string));
+        activity.runOnUiThread(() ->
+                logView.append(
+                        String.format(
+                                "\n%s: %s",
+                                SimpleDateFormat.getTimeInstance(SimpleDateFormat.MEDIUM)
+                                        .format(System.currentTimeMillis()),
+                                string)));
+
     }
 }

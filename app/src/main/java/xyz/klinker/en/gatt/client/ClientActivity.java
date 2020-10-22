@@ -36,13 +36,14 @@ public class ClientActivity  extends AppCompatActivity implements Scanner.Scanne
     private TextView mtuSizeLabel;
     private Slider mtuSizeSlider;
     private TextView connectionStatusLabel;
-    private Button initiateTransferButton;
+    private Button transferAdvertisements;
+    private Button transferScans;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_client);
-        logger = new Logger(TAG, findViewById(R.id.log));
+        logger = new Logger(this, TAG, findViewById(R.id.log));
         scanner = new Scanner(this);
 
         numberOfDaysLabel = findViewById(R.id.number_of_days);
@@ -54,7 +55,8 @@ public class ClientActivity  extends AppCompatActivity implements Scanner.Scanne
         mtuSizeLabel = findViewById(R.id.mtu_size);
         mtuSizeSlider = findViewById(R.id.mtu_size_slider);
         connectionStatusLabel = findViewById(R.id.connection_status);
-        initiateTransferButton = findViewById(R.id.initiate_transfer);
+        transferAdvertisements = findViewById(R.id.transfer_advertisements);
+        transferScans = findViewById(R.id.transfer_scans);
         initializeSliders();
     }
 
@@ -81,6 +83,10 @@ public class ClientActivity  extends AppCompatActivity implements Scanner.Scanne
         logger.i("Initializing advertisement transfer");
     }
 
+    public void initiateScanRecordTransfer(View view) {
+        logger.i("Requesting scan record transfer");
+    }
+
     @Override
     public void onScanningStarted() {
         logger.i("Successfully started scanning");
@@ -102,17 +108,33 @@ public class ClientActivity  extends AppCompatActivity implements Scanner.Scanne
     }
 
     @Override
+    public void onGattConnecting(BluetoothDevice device) {
+        logger.i("Starting GATT connection: " + device);
+    }
+
+    @Override
     public void onGattConnected(BluetoothDevice device) {
         logger.i("GATT connected: " + device);
-        connectionStatusLabel.setText(R.string.connection_status_connected);
-        initiateTransferButton.setEnabled(true);
+        runOnUiThread(() -> {
+            connectionStatusLabel.setText(R.string.connection_status_connected);
+            transferAdvertisements.setEnabled(true);
+            transferScans.setEnabled(true);
+        });
+    }
+
+    @Override
+    public void onGattOperation(BluetoothDevice device, String operation, String value) {
+        logger.v("GATT: " + device + ", " + operation + ", " + value);
     }
 
     @Override
     public void onGattDisconnected(BluetoothDevice device) {
         logger.i("GATT disconnected: " + device);
-        connectionStatusLabel.setText(R.string.connection_status_disconnected);
-        initiateTransferButton.setEnabled(false);
+        runOnUiThread(() -> {
+            connectionStatusLabel.setText(R.string.connection_status_disconnected);
+            transferAdvertisements.setEnabled(false);
+            transferScans.setEnabled(false);
+        });
     }
 
     private void initializeSliders() {

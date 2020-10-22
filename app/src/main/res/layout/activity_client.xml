@@ -136,7 +136,15 @@
         android:text="@string/client_transfer_advertisements"
         android:enabled="false"
         android:onClick="initiateAdvertisementTransfer"
-        android:id="@+id/initiate_transfer"/>
+        android:id="@+id/transfer_advertisements"/>
+
+    <Button
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="@string/client_transfer_scans"
+        android:enabled="false"
+        android:onClick="initiateScanRecordTransfer"
+        android:id="@+id/transfer_scans"/>
 
     <ScrollView
         android:layout_width="match_parent"
