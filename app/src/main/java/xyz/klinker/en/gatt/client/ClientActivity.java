@@ -15,7 +15,7 @@ import androidx.core.content.ContextCompat;
 import com.google.android.material.slider.Slider;
 
 import xyz.klinker.en.gatt.R;
-import xyz.klinker.en.gatt.util.GattLock;
+import xyz.klinker.en.gatt.util.GattQueue;
 import xyz.klinker.en.gatt.util.Logger;
 
 import static android.content.pm.PackageManager.PERMISSION_GRANTED;
@@ -26,7 +26,7 @@ public class ClientActivity  extends AppCompatActivity implements Scanner.Scanne
     private static final int PERMISSION_REQUEST_CODE = 1234;
 
     private Logger logger;
-    private GattLock gattLock;
+    private GattQueue gattQueue;
     private Scanner scanner;
     private AdvertisementGenerator generator;
     private AdvertisementSyncer syncer;
@@ -48,10 +48,10 @@ public class ClientActivity  extends AppCompatActivity implements Scanner.Scanne
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_client);
         logger = new Logger(this, TAG, findViewById(R.id.log));
-        gattLock = new GattLock();
-        scanner = new Scanner(this, gattLock);
+        gattQueue = new GattQueue(logger);
+        scanner = new Scanner(this, gattQueue);
         generator = new AdvertisementGenerator();
-        syncer = new AdvertisementSyncer(this, gattLock);
+        syncer = new AdvertisementSyncer(this, gattQueue);
 
         numberOfDaysLabel = findViewById(R.id.number_of_days);
         numberOfDaysSlider = findViewById(R.id.number_of_days_slider);

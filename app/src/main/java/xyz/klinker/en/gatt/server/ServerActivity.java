@@ -1,6 +1,7 @@
 package xyz.klinker.en.gatt.server;
 
 import android.bluetooth.BluetoothDevice;
+import android.bluetooth.BluetoothGattCharacteristic;
 import android.os.Bundle;
 import android.widget.TextView;
 

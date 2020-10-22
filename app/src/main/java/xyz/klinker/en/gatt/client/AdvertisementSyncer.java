@@ -9,7 +9,7 @@ import androidx.annotation.Nullable;
 
 import java.util.List;
 
-import xyz.klinker.en.gatt.util.GattLock;
+import xyz.klinker.en.gatt.util.GattQueue;
 import xyz.klinker.en.gatt.util.Logger;
 
 import static android.bluetooth.BluetoothGattCharacteristic.WRITE_TYPE_DEFAULT;
@@ -19,13 +19,13 @@ import static xyz.klinker.en.gatt.util.Constants.WRITE_ADVERTISEMENTS_UUID;
 final class AdvertisementSyncer {
 
     private final Context context;
-    private final GattLock gattLock;
+    private final GattQueue gattQueue;
     @Nullable private BluetoothGatt gatt;
     private int mtu = 0;
 
-    AdvertisementSyncer(Context context, GattLock gattLock) {
+    AdvertisementSyncer(Context context, GattQueue gattQueue) {
         this.context = context;
-        this.gattLock = gattLock;
+        this.gattQueue = gattQueue;
     }
 
     void setGatt(BluetoothGatt gatt, int mtu) {
@@ -55,47 +55,26 @@ final class AdvertisementSyncer {
                                 context, rpis.size() * rpis.get(0).length)
                         + " over MTU "
                         + mtu);
+        gattQueue.setGatt(gatt);
         byte[] writeRequest = new byte[mtu];
         int currentLength = 0;
         for (int i = 0; i < rpis.size(); i++) {
             byte[] rpi = rpis.get(i);
             if (currentLength + rpi.length > mtu) {
-                logger.v("Starting write of " + currentLength + " bytes");
-                boolean result = sendCurrentWriteRequest(writeRequest, currentLength);
-                if (result) {
-                    logger.v(
-                            "Finished writing "
-                                    + currentLength
-                                    + " bytes, progress: "
-                                    + ((float) i / rpis.size()));
-                } else {
-                    logger.e("Failed to write characteristic");
-                }
+                enqueueCurrentWriteRequest(writeRequest, currentLength);
                 writeRequest = new byte[mtu];
                 currentLength = 0;
             }
             System.arraycopy(rpi, 0, writeRequest, currentLength, rpi.length);
             currentLength += rpi.length;
         }
-        sendCurrentWriteRequest(writeRequest, currentLength);
-        logger.i("Finished sending RPIs in " + (System.currentTimeMillis() - startTime) + " ms");
+        enqueueCurrentWriteRequest(writeRequest, currentLength);
+        gattQueue.start();
     }
 
-    private boolean sendCurrentWriteRequest(byte[] writeRequest, int currentLength) {
-        // Note that this write doesn't require encryption. Encryption would most likely
-        // mean longer writing time.
+    private void enqueueCurrentWriteRequest(byte[] writeRequest, int currentLength) {
         byte[] packet = new byte[currentLength];
         System.arraycopy(writeRequest, 0, packet, 0, currentLength);
-        BluetoothGattCharacteristic characteristic =
-                gatt
-                        .getService(SERVICE_UUID.getUuid())
-                        .getCharacteristic(WRITE_ADVERTISEMENTS_UUID);
-        characteristic.setValue(packet);
-        characteristic.setWriteType(WRITE_TYPE_DEFAULT);
-        // TODO(jklinker): Figure out the right timing here, this isn't working reliably.
-        gattLock.await();
-        boolean result = gatt.writeCharacteristic(characteristic);
-        gattLock.reset();
-        return result;
+        gattQueue.add(packet);
     }
 }

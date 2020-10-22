@@ -21,7 +21,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import xyz.klinker.en.gatt.util.GattLock;
+import xyz.klinker.en.gatt.util.GattQueue;
 
 import static android.bluetooth.le.ScanSettings.SCAN_MODE_BALANCED;
 import static xyz.klinker.en.gatt.util.Constants.SERVICE_UUID;
@@ -31,16 +31,16 @@ final class Scanner {
     private static final int ERROR_NO_ADAPTER = -1;
 
     private final Context context;
-    private final GattLock gattLock;
+    private final GattQueue gattQueue;
     private final Set<BluetoothDevice> discoveredDevices = new HashSet<>();
 
     @Nullable private ScanCallback platformCallback;
     @Nullable private ScannerCallback callback;
     @Nullable private BluetoothGatt gatt;
 
-    Scanner(Context context, GattLock gattLock) {
+    Scanner(Context context, GattQueue gattQueue) {
         this.context = context;
-        this.gattLock = gattLock;
+        this.gattQueue = gattQueue;
     }
 
     void beginScanning(ScannerCallback callback) {
@@ -61,7 +61,7 @@ final class Scanner {
                                     result.getDevice().connectGatt(
                                             context,
                                             false,
-                                            new ScannerGattCallback(callback, gattLock));
+                                            new ScannerGattCallback(callback, gattQueue));
                         }
                     }
 
@@ -87,6 +87,7 @@ final class Scanner {
 
     void stopScanning() {
         if (gatt != null) {
+            gatt.disconnect();
             gatt.close();
             gatt = null;
         }
@@ -103,11 +104,11 @@ final class Scanner {
     private static class ScannerGattCallback extends BluetoothGattCallback {
 
         private final ScannerCallback callback;
-        private final GattLock gattLock;
+        private final GattQueue gattQueue;
 
-        private ScannerGattCallback(ScannerCallback callback, GattLock gattLock) {
+        private ScannerGattCallback(ScannerCallback callback, GattQueue gattQueue) {
             this.callback = callback;
-            this.gattLock = gattLock;
+            this.gattQueue = gattQueue;
         }
 
         @Override
@@ -153,7 +154,7 @@ final class Scanner {
                     gatt.getDevice(),
                     "characteristicRead",
                     characteristic.getUuid().toString());
-            gattLock.release();
+            gattQueue.releaseNext();
         }
 
         @Override
@@ -163,7 +164,7 @@ final class Scanner {
                     gatt.getDevice(),
                     "characteristicWrite",
                     characteristic.getUuid().toString() + ", " + characteristic.getValue().length);
-            gattLock.release();
+            gattQueue.releaseNext();
         }
 
         @Override

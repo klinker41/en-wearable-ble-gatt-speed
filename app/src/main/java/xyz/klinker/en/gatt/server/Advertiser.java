@@ -2,7 +2,6 @@ package xyz.klinker.en.gatt.server;
 
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
-import android.bluetooth.BluetoothGatt;
 import android.bluetooth.BluetoothGattCharacteristic;
 import android.bluetooth.BluetoothGattDescriptor;
 import android.bluetooth.BluetoothGattServer;
@@ -82,6 +81,9 @@ final class Advertiser {
 
     void stopAdvertising() {
         if (server != null) {
+            for (BluetoothDevice device : server.getConnectedDevices()) {
+                server.cancelConnection(device);
+            }
             server.close();
             server = null;
         }
