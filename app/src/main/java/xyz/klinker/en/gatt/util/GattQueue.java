@@ -3,6 +3,8 @@ package xyz.klinker.en.gatt.util;
 import android.bluetooth.BluetoothGatt;
 import android.bluetooth.BluetoothGattCharacteristic;
 
+import androidx.annotation.Nullable;
+
 import java.util.LinkedList;
 import java.util.Queue;
 
@@ -13,10 +15,12 @@ import static xyz.klinker.en.gatt.util.Constants.WRITE_ADVERTISEMENTS_UUID;
 public class GattQueue {
 
     private final Logger logger;
+    private final Queue<byte[]> requests = new LinkedList<>();
 
-    private Queue<byte[]> requests = new LinkedList<>();
     private BluetoothGatt gatt;
     private long startTime;
+    private int totalRequests;
+    @Nullable private GattFinishedCallback callback;
 
     public GattQueue(Logger logger) {
         this.logger = logger;
@@ -30,7 +34,9 @@ public class GattQueue {
         requests.add(request);
     }
 
-    public synchronized void start() {
+    public synchronized void start(@Nullable GattFinishedCallback callback) {
+        this.callback = callback;
+        totalRequests = requests.size();
         startTime = System.currentTimeMillis();
         writeIfNeeded();
     }
@@ -52,11 +58,22 @@ public class GattQueue {
             // mean longer writing time.
             boolean result = gatt.writeCharacteristic(characteristic);
             logger.v("Wrote packet with result " + result + ", " + requests.size() + " remaining");
+            if (callback != null) {
+                callback.onUpdate(totalRequests - requests.size(), totalRequests);
+            }
         } else {
             logger.i(
                     "Finished writing packets in "
                             + (System.currentTimeMillis() - startTime)
                             + " ms");
+            if (callback != null) {
+                callback.onFinished();
+            }
         }
+    }
+
+    public interface GattFinishedCallback {
+        void onUpdate(int current, int total);
+        void onFinished();
     }
 }

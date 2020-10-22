@@ -130,21 +130,40 @@
             android:id="@+id/connection_status"/>
     </LinearLayout>
 
-    <Button
+    <FrameLayout
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="@string/client_transfer_advertisements"
-        android:enabled="false"
-        android:onClick="initiateAdvertisementTransfer"
-        android:id="@+id/transfer_advertisements"/>
+        android:layout_height="wrap_content">
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:id="@+id/transfer_button_holder">
+            <Button
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="@string/client_transfer_advertisements"
+                android:enabled="false"
+                android:onClick="initiateAdvertisementTransfer"
+                android:id="@+id/transfer_advertisements"/>
 
-    <Button
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="@string/client_transfer_scans"
-        android:enabled="false"
-        android:onClick="initiateScanRecordTransfer"
-        android:id="@+id/transfer_scans"/>
+            <Button
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="@string/client_transfer_scans"
+                android:enabled="false"
+                android:onClick="initiateScanRecordTransfer"
+                android:id="@+id/transfer_scans"/>
+        </LinearLayout>
+
+        <ProgressBar
+            style="?android:attr/progressBarStyleHorizontal"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center_vertical"
+            android:indeterminate="false"
+            android:visibility="gone"
+            android:id="@+id/transfer_progress"/>
+    </FrameLayout>
 
     <ScrollView
         android:layout_width="match_parent"

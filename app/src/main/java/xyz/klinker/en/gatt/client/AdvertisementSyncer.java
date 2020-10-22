@@ -1,7 +1,6 @@
 package xyz.klinker.en.gatt.client;
 
 import android.bluetooth.BluetoothGatt;
-import android.bluetooth.BluetoothGattCharacteristic;
 import android.content.Context;
 import android.text.format.Formatter;
 
@@ -11,10 +10,6 @@ import java.util.List;
 
 import xyz.klinker.en.gatt.util.GattQueue;
 import xyz.klinker.en.gatt.util.Logger;
-
-import static android.bluetooth.BluetoothGattCharacteristic.WRITE_TYPE_DEFAULT;
-import static xyz.klinker.en.gatt.util.Constants.SERVICE_UUID;
-import static xyz.klinker.en.gatt.util.Constants.WRITE_ADVERTISEMENTS_UUID;
 
 final class AdvertisementSyncer {
 
@@ -33,7 +28,7 @@ final class AdvertisementSyncer {
         this.mtu = mtu;
     }
 
-    void sendRpis(List<byte[]> rpis, Logger logger) {
+    void sendRpis(List<byte[]> rpis, Logger logger, GattQueue.GattFinishedCallback callback) {
         if (gatt == null) {
             logger.e("Unable to send RPIs, no GATT connection");
             return;
@@ -69,7 +64,7 @@ final class AdvertisementSyncer {
             currentLength += rpi.length;
         }
         enqueueCurrentWriteRequest(writeRequest, currentLength);
-        gattQueue.start();
+        gattQueue.start(callback);
     }
 
     private void enqueueCurrentWriteRequest(byte[] writeRequest, int currentLength) {

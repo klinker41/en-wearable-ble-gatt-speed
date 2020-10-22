@@ -6,6 +6,7 @@ import android.bluetooth.BluetoothGatt;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.Button;
+import android.widget.ProgressBar;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
@@ -42,6 +43,8 @@ public class ClientActivity  extends AppCompatActivity implements Scanner.Scanne
     private TextView connectionStatusLabel;
     private Button transferAdvertisements;
     private Button transferScans;
+    private ProgressBar transferProgress;
+    private View transferButtonHolder;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -64,6 +67,8 @@ public class ClientActivity  extends AppCompatActivity implements Scanner.Scanne
         connectionStatusLabel = findViewById(R.id.connection_status);
         transferAdvertisements = findViewById(R.id.transfer_advertisements);
         transferScans = findViewById(R.id.transfer_scans);
+        transferProgress = findViewById(R.id.transfer_progress);
+        transferButtonHolder = findViewById(R.id.transfer_button_holder);
         initializeSliders();
     }
 
@@ -88,13 +93,25 @@ public class ClientActivity  extends AppCompatActivity implements Scanner.Scanne
 
     public void initiateAdvertisementTransfer(View view) {
         logger.i("Initializing advertisement transfer");
+        showProgress();
         new Thread(() ->
             syncer.sendRpis(
                     generator.generateAdvertisements(
                             (int) numberOfDaysSlider.getValue(),
                             (int) numberOfAdvertisementsSlider.getValue(),
                             (int) sizeOfAdvertisementSlider.getValue()),
-                    logger))
+                    logger,
+                    new GattQueue.GattFinishedCallback() {
+                        @Override
+                        public void onUpdate(int current, int total) {
+                            runOnUiThread(() -> updateProgress(current, total));
+                        }
+
+                        @Override
+                        public void onFinished() {
+                            runOnUiThread(() -> hideProgress());
+                        }
+                    }))
                 .start();
     }
 
@@ -181,6 +198,28 @@ public class ClientActivity  extends AppCompatActivity implements Scanner.Scanne
 
     private void setLabelValue(TextView label, float value) {
         label.setText(Integer.toString((int) value));
+    }
+
+    private void showProgress() {
+        transferProgress.setVisibility(View.VISIBLE);
+        transferButtonHolder.setVisibility(View.INVISIBLE);
+        numberOfDaysSlider.setEnabled(false);
+        numberOfAdvertisementsSlider.setEnabled(false);
+        sizeOfAdvertisementSlider.setEnabled(false);
+    }
+
+    private void updateProgress(int current, int total) {
+        transferProgress.setIndeterminate(false);
+        transferProgress.setMax(total);
+        transferProgress.setProgress(current);
+    }
+
+    private void hideProgress() {
+        transferProgress.setVisibility(View.INVISIBLE);
+        transferButtonHolder.setVisibility(View.VISIBLE);
+        numberOfDaysSlider.setEnabled(true);
+        numberOfAdvertisementsSlider.setEnabled(true);
+        sizeOfAdvertisementSlider.setEnabled(true);
     }
 
     private void requestPermissionOrStartScanning() {
