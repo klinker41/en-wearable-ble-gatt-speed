@@ -9,7 +9,6 @@ import androidx.appcompat.app.AppCompatActivity;
 import com.google.android.material.slider.Slider;
 
 import xyz.klinker.en.gatt.R;
-import xyz.klinker.en.gatt.util.Advertiser;
 import xyz.klinker.en.gatt.util.Logger;
 
 public class ServerActivity  extends AppCompatActivity implements Advertiser.AdvertiserCallback {
@@ -82,6 +81,11 @@ public class ServerActivity  extends AppCompatActivity implements Advertiser.Adv
         logger.i("GATT connected: " + device);
         runOnUiThread(() ->
                 connectionStatusLabel.setText(R.string.connection_status_connected));
+    }
+
+    @Override
+    public void onGattMtuChanged(BluetoothDevice device, int mtu) {
+        logger.i("GATT MTU changed: " + mtu);
     }
 
     @Override

@@ -1,4 +1,4 @@
-package xyz.klinker.en.gatt.util;
+package xyz.klinker.en.gatt.client;
 
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
@@ -21,25 +21,29 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+import xyz.klinker.en.gatt.util.GattLock;
+
 import static android.bluetooth.le.ScanSettings.SCAN_MODE_BALANCED;
 import static xyz.klinker.en.gatt.util.Constants.SERVICE_UUID;
 
-public class Scanner {
+final class Scanner {
 
     private static final int ERROR_NO_ADAPTER = -1;
 
     private final Context context;
+    private final GattLock gattLock;
     private final Set<BluetoothDevice> discoveredDevices = new HashSet<>();
 
     @Nullable private ScanCallback platformCallback;
     @Nullable private ScannerCallback callback;
     @Nullable private BluetoothGatt gatt;
 
-    public Scanner(Context context) {
+    Scanner(Context context, GattLock gattLock) {
         this.context = context;
+        this.gattLock = gattLock;
     }
 
-    public void beginScanning(ScannerCallback callback) {
+    void beginScanning(ScannerCallback callback) {
         this.callback = callback;
         List<ScanFilter> filters = new ArrayList<>();
         filters.add(new ScanFilter.Builder().setServiceUuid(SERVICE_UUID).build());
@@ -53,8 +57,11 @@ public class Scanner {
                         boolean added = discoveredDevices.add(result.getDevice());
                         if (added) {
                             callback.onDeviceFound(result.getDevice());
-                            gatt = result.getDevice().connectGatt(
-                                    context, false, new ScannerGattCallback(callback));
+                            gatt =
+                                    result.getDevice().connectGatt(
+                                            context,
+                                            false,
+                                            new ScannerGattCallback(callback, gattLock));
                         }
                     }
 
@@ -78,7 +85,7 @@ public class Scanner {
         callback.onScanningStarted();
     }
 
-    public void stopScanning() {
+    void stopScanning() {
         if (gatt != null) {
             gatt.close();
             gatt = null;
@@ -96,9 +103,11 @@ public class Scanner {
     private static class ScannerGattCallback extends BluetoothGattCallback {
 
         private final ScannerCallback callback;
+        private final GattLock gattLock;
 
-        private ScannerGattCallback(ScannerCallback callback) {
+        private ScannerGattCallback(ScannerCallback callback, GattLock gattLock) {
             this.callback = callback;
+            this.gattLock = gattLock;
         }
 
         @Override
@@ -124,7 +133,7 @@ public class Scanner {
                     callback.onGattConnecting(gatt.getDevice());
                     break;
                 case BluetoothProfile.STATE_CONNECTED:
-                    callback.onGattConnected(gatt.getDevice());
+                    callback.onGattConnected(gatt.getDevice(), gatt);
                     break;
                 case BluetoothProfile.STATE_DISCONNECTED:
                     callback.onGattDisconnected(gatt.getDevice());
@@ -134,28 +143,32 @@ public class Scanner {
 
         @Override
         public void onServicesDiscovered(BluetoothGatt gatt, int status) {
-            callback.onGattOperation(
-                    gatt.getDevice(), "servicesDiscovered", Integer.toString(status));
+            callback.onGattServicesDiscovered(gatt.getDevice(), gatt);
         }
 
         @Override
-        public void onCharacteristicRead(BluetoothGatt gatt, BluetoothGattCharacteristic characteristic, int status) {
+        public void onCharacteristicRead(
+                BluetoothGatt gatt, BluetoothGattCharacteristic characteristic, int status) {
             callback.onGattOperation(
                     gatt.getDevice(),
                     "characteristicRead",
-                    characteristic.getStringValue(0));
+                    characteristic.getUuid().toString());
+            gattLock.release();
         }
 
         @Override
-        public void onCharacteristicWrite(BluetoothGatt gatt, BluetoothGattCharacteristic characteristic, int status) {
+        public void onCharacteristicWrite(
+                BluetoothGatt gatt, BluetoothGattCharacteristic characteristic, int status) {
             callback.onGattOperation(
                     gatt.getDevice(),
                     "characteristicWrite",
-                    characteristic.getStringValue(0));
+                    characteristic.getUuid().toString() + ", " + characteristic.getValue().length);
+            gattLock.release();
         }
 
         @Override
-        public void onCharacteristicChanged(BluetoothGatt gatt, BluetoothGattCharacteristic characteristic) {
+        public void onCharacteristicChanged(
+                BluetoothGatt gatt, BluetoothGattCharacteristic characteristic) {
             callback.onGattOperation(
                     gatt.getDevice(),
                     "characteristicChanged",
@@ -163,13 +176,15 @@ public class Scanner {
         }
 
         @Override
-        public void onDescriptorRead(BluetoothGatt gatt, BluetoothGattDescriptor descriptor, int status) {
+        public void onDescriptorRead(
+                BluetoothGatt gatt, BluetoothGattDescriptor descriptor, int status) {
             callback.onGattOperation(
                     gatt.getDevice(), "descriptorRead", descriptor.getUuid().toString());
         }
 
         @Override
-        public void onDescriptorWrite(BluetoothGatt gatt, BluetoothGattDescriptor descriptor, int status) {
+        public void onDescriptorWrite(
+                BluetoothGatt gatt, BluetoothGattDescriptor descriptor, int status) {
             callback.onGattOperation(
                     gatt.getDevice(), "descriptorWrite", descriptor.getUuid().toString());
         }
@@ -190,17 +205,20 @@ public class Scanner {
 
         @Override
         public void onMtuChanged(BluetoothGatt gatt, int mtu, int status) {
-            callback.onGattOperation(gatt.getDevice(), "mtuChanged", Integer.toString(mtu));
+            callback.onGattMtuChanged(gatt.getDevice(), mtu);
+            gatt.discoverServices();
         }
     }
 
-    public interface ScannerCallback {
+    interface ScannerCallback {
         void onScanningStarted();
         void onScanningFailed(int errorCode);
         void onDeviceFound(BluetoothDevice device);
         void onScanningStopped();
         void onGattConnecting(BluetoothDevice device);
-        void onGattConnected(BluetoothDevice device);
+        void onGattConnected(BluetoothDevice device, BluetoothGatt gatt);
+        void onGattMtuChanged(BluetoothDevice device, int mtu);
+        void onGattServicesDiscovered(BluetoothDevice device, BluetoothGatt gatt);
         void onGattOperation(BluetoothDevice device, String operation, String value);
         void onGattDisconnected(BluetoothDevice device);
     }

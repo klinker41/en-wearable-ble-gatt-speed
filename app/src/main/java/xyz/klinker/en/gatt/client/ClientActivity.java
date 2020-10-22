@@ -2,6 +2,7 @@ package xyz.klinker.en.gatt.client;
 
 import android.Manifest;
 import android.bluetooth.BluetoothDevice;
+import android.bluetooth.BluetoothGatt;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.Button;
@@ -14,8 +15,8 @@ import androidx.core.content.ContextCompat;
 import com.google.android.material.slider.Slider;
 
 import xyz.klinker.en.gatt.R;
+import xyz.klinker.en.gatt.util.GattLock;
 import xyz.klinker.en.gatt.util.Logger;
-import xyz.klinker.en.gatt.util.Scanner;
 
 import static android.content.pm.PackageManager.PERMISSION_GRANTED;
 
@@ -25,7 +26,10 @@ public class ClientActivity  extends AppCompatActivity implements Scanner.Scanne
     private static final int PERMISSION_REQUEST_CODE = 1234;
 
     private Logger logger;
+    private GattLock gattLock;
     private Scanner scanner;
+    private AdvertisementGenerator generator;
+    private AdvertisementSyncer syncer;
 
     private TextView numberOfDaysLabel;
     private Slider numberOfDaysSlider;
@@ -44,7 +48,10 @@ public class ClientActivity  extends AppCompatActivity implements Scanner.Scanne
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_client);
         logger = new Logger(this, TAG, findViewById(R.id.log));
-        scanner = new Scanner(this);
+        gattLock = new GattLock();
+        scanner = new Scanner(this, gattLock);
+        generator = new AdvertisementGenerator();
+        syncer = new AdvertisementSyncer(this, gattLock);
 
         numberOfDaysLabel = findViewById(R.id.number_of_days);
         numberOfDaysSlider = findViewById(R.id.number_of_days_slider);
@@ -81,6 +88,14 @@ public class ClientActivity  extends AppCompatActivity implements Scanner.Scanne
 
     public void initiateAdvertisementTransfer(View view) {
         logger.i("Initializing advertisement transfer");
+        new Thread(() ->
+            syncer.sendRpis(
+                    generator.generateAdvertisements(
+                            (int) numberOfDaysSlider.getValue(),
+                            (int) numberOfAdvertisementsSlider.getValue(),
+                            (int) sizeOfAdvertisementSlider.getValue()),
+                    logger))
+                .start();
     }
 
     public void initiateScanRecordTransfer(View view) {
@@ -113,12 +128,25 @@ public class ClientActivity  extends AppCompatActivity implements Scanner.Scanne
     }
 
     @Override
-    public void onGattConnected(BluetoothDevice device) {
+    public void onGattConnected(BluetoothDevice device, BluetoothGatt gatt) {
         logger.i("GATT connected: " + device);
+        gatt.requestMtu((int) mtuSizeSlider.getValue());
+    }
+
+    @Override
+    public void onGattMtuChanged(BluetoothDevice device, int mtu) {
+        logger.i("GATT MTU changed: " + mtu);
+    }
+
+    @Override
+    public void onGattServicesDiscovered(BluetoothDevice device, BluetoothGatt gatt) {
+        logger.i("GATT services discovered");
+        syncer.setGatt(gatt, (int) mtuSizeSlider.getValue());
         runOnUiThread(() -> {
             connectionStatusLabel.setText(R.string.connection_status_connected);
             transferAdvertisements.setEnabled(true);
             transferScans.setEnabled(true);
+            mtuSizeSlider.setEnabled(false);
         });
     }
 
@@ -134,6 +162,7 @@ public class ClientActivity  extends AppCompatActivity implements Scanner.Scanne
             connectionStatusLabel.setText(R.string.connection_status_disconnected);
             transferAdvertisements.setEnabled(false);
             transferScans.setEnabled(false);
+            mtuSizeSlider.setEnabled(true);
         });
     }
 

@@ -1,4 +1,4 @@
-package xyz.klinker.en.gatt.util;
+package xyz.klinker.en.gatt.server;
 
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
@@ -18,11 +18,14 @@ import android.content.Context;
 
 import androidx.annotation.Nullable;
 
+import static android.bluetooth.BluetoothGatt.GATT_SUCCESS;
 import static android.bluetooth.le.AdvertiseSettings.ADVERTISE_MODE_BALANCED;
 import static android.bluetooth.le.AdvertiseSettings.ADVERTISE_TX_POWER_MEDIUM;
+import static xyz.klinker.en.gatt.util.Constants.READ_SCANS;
 import static xyz.klinker.en.gatt.util.Constants.SERVICE_UUID;
+import static xyz.klinker.en.gatt.util.Constants.WRITE_ADVERTISEMENTS;
 
-public class Advertiser {
+final class Advertiser {
 
     private static final int ERROR_NO_ADAPTER = -1;
 
@@ -31,11 +34,11 @@ public class Advertiser {
     @Nullable private AdvertiserCallback callback;
     @Nullable private BluetoothGattServer server;
 
-    public Advertiser(Context context) {
+    Advertiser(Context context) {
         this.context = context;
     }
 
-    public void beginAdvertising(AdvertiserCallback callback) {
+    void beginAdvertising(AdvertiserCallback callback) {
         this.callback = callback;
         AdvertiseSettings settings =
                 new AdvertiseSettings.Builder()
@@ -77,7 +80,7 @@ public class Advertiser {
         advertiser.startAdvertising(settings, data, platformCallback);
     }
 
-    public void stopAdvertising() {
+    void stopAdvertising() {
         if (server != null) {
             server.close();
             server = null;
@@ -96,22 +99,29 @@ public class Advertiser {
     private void createGattServer() {
         BluetoothManager manager =
                 (BluetoothManager) context.getSystemService(Context.BLUETOOTH_SERVICE);
-        BluetoothGattServer server =
-                manager.openGattServer(context, new AdvertiserGattServerCallback(callback));
+        AdvertiserGattServerCallback gattCallback = new AdvertiserGattServerCallback(callback);
+        BluetoothGattServer server = manager.openGattServer(context, gattCallback);
         BluetoothGattService service =
                 new BluetoothGattService(
                         SERVICE_UUID.getUuid(), BluetoothGattService.SERVICE_TYPE_PRIMARY);
-        // TODO(jklinker): Add characteristics.
+        service.addCharacteristic(WRITE_ADVERTISEMENTS);
+        service.addCharacteristic(READ_SCANS);
         server.addService(service);
+        gattCallback.setBluetoothGattServer(server);
         callback.onGattCreated();
     }
 
-    private class AdvertiserGattServerCallback extends BluetoothGattServerCallback {
+    private static class AdvertiserGattServerCallback extends BluetoothGattServerCallback {
 
-        private AdvertiserCallback callback;
+        private final AdvertiserCallback callback;
+        private  BluetoothGattServer server;
 
         private AdvertiserGattServerCallback(AdvertiserCallback callback) {
             this.callback = callback;
+        }
+
+        private void setBluetoothGattServer(BluetoothGattServer server) {
+            this.server = server;
         }
 
         @Override
@@ -158,7 +168,13 @@ public class Advertiser {
                 int offset,
                 byte[] value) {
             callback.onGattOperation(
-                    device, "characteristicWriteRequest", characteristic.getUuid().toString());
+                    device,
+                    "characteristicWriteRequest",
+                    characteristic.getUuid().toString());
+            if (responseNeeded) {
+                server.sendResponse(device, requestId, GATT_SUCCESS, 0, null);
+                callback.onGattOperation(device, "characteristicWriteResponse", "sent");
+            }
         }
 
         @Override
@@ -196,7 +212,7 @@ public class Advertiser {
 
         @Override
         public void onMtuChanged(BluetoothDevice device, int mtu) {
-            callback.onGattOperation(device, "mtuChanged", Integer.toString(mtu));
+            callback.onGattMtuChanged(device, mtu);
         }
 
         @Override
@@ -219,6 +235,7 @@ public class Advertiser {
         void onGattCreated();
         void onGattConnecting(BluetoothDevice device);
         void onGattConnected(BluetoothDevice device);
+        void onGattMtuChanged(BluetoothDevice device, int mtu);
         void onGattOperation(BluetoothDevice device, String operation, String value);
         void onGattDisconnected(BluetoothDevice device);
     }
