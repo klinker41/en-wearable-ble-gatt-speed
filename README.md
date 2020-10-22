@@ -18,7 +18,7 @@ client.
 
 Test case | MTU | Total bytes transferred | Time taken
 --- | --- | --- | ---
-Transfer advertisements, 3 days, 144 per day, 20 bytes each | 512 | X | ~2s
-Transfer advertisements, 14 days, 288 per day, 31 bytes each | 512 | X | X
-Transfer advertisements, 3 days, 144 per day, 20 bytes each | 26 | X | X
-Transfer advertisements, 14 days, 288 per day, 31 bytes each | 26 | X | X
+Transfer advertisements, 3 days, 144 per day, 20 bytes each | 512 | 11 kB | ~2 s
+Transfer advertisements, 14 days, 288 per day, 31 bytes each | 512 | 149 kB | ~20 s
+Transfer advertisements, 3 days, 144 per day, 20 bytes each | 30 | 11 kB | ~27 s
+Transfer advertisements, 14 days, 288 per day, 31 bytes each | 37 | 149 kB | ~491 s

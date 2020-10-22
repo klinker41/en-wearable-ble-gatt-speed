@@ -20,9 +20,9 @@ import androidx.annotation.Nullable;
 import static android.bluetooth.BluetoothGatt.GATT_SUCCESS;
 import static android.bluetooth.le.AdvertiseSettings.ADVERTISE_MODE_BALANCED;
 import static android.bluetooth.le.AdvertiseSettings.ADVERTISE_TX_POWER_MEDIUM;
-import static xyz.klinker.en.gatt.util.Constants.READ_SCANS;
+import static xyz.klinker.en.gatt.util.Constants.READ_SCANS_UUID;
 import static xyz.klinker.en.gatt.util.Constants.SERVICE_UUID;
-import static xyz.klinker.en.gatt.util.Constants.WRITE_ADVERTISEMENTS;
+import static xyz.klinker.en.gatt.util.Constants.WRITE_ADVERTISEMENTS_UUID;
 
 final class Advertiser {
 
@@ -106,8 +106,16 @@ final class Advertiser {
         BluetoothGattService service =
                 new BluetoothGattService(
                         SERVICE_UUID.getUuid(), BluetoothGattService.SERVICE_TYPE_PRIMARY);
-        service.addCharacteristic(WRITE_ADVERTISEMENTS);
-        service.addCharacteristic(READ_SCANS);
+        service.addCharacteristic(
+                new BluetoothGattCharacteristic(
+                        WRITE_ADVERTISEMENTS_UUID,
+                        BluetoothGattCharacteristic.PROPERTY_WRITE,
+                        BluetoothGattCharacteristic.PERMISSION_WRITE));
+        service.addCharacteristic(
+                new BluetoothGattCharacteristic(
+                        READ_SCANS_UUID,
+                        BluetoothGattCharacteristic.PROPERTY_READ,
+                        BluetoothGattCharacteristic.PERMISSION_READ));
         server.addService(service);
         gattCallback.setBluetoothGattServer(server);
         callback.onGattCreated();
@@ -200,11 +208,17 @@ final class Advertiser {
                 byte[] value) {
             callback.onGattOperation(
                     device, "descriptorWrite", descriptor.getUuid().toString());
+            if (responseNeeded) {
+                server.sendResponse(device, requestId, GATT_SUCCESS, 0, null);
+                callback.onGattOperation(device, "descriptorWriteResponse", "sent");
+            }
         }
 
         @Override
         public void onExecuteWrite(BluetoothDevice device, int requestId, boolean execute) {
             callback.onGattOperation(device, "executeWrite", Boolean.toString(execute));
+            server.sendResponse(device, requestId, GATT_SUCCESS, 0, null);
+            callback.onGattOperation(device, "executeWriteResponse", "sent");
         }
 
         @Override
