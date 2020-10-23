@@ -10,6 +10,7 @@ import android.widget.ProgressBar;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.content.ContextCompat;
 
@@ -28,9 +29,11 @@ public class ClientActivity  extends AppCompatActivity implements Scanner.Scanne
 
     private Logger logger;
     private GattQueue gattQueue;
+    @Nullable private BluetoothGatt gatt;
     private Scanner scanner;
     private AdvertisementGenerator generator;
-    private AdvertisementSyncer syncer;
+    private AdvertisementSyncer advertisementSyncer;
+    private ScanSyncer scanSyncer;
 
     private TextView numberOfDaysLabel;
     private Slider numberOfDaysSlider;
@@ -54,7 +57,8 @@ public class ClientActivity  extends AppCompatActivity implements Scanner.Scanne
         gattQueue = new GattQueue(logger);
         scanner = new Scanner(this, gattQueue);
         generator = new AdvertisementGenerator();
-        syncer = new AdvertisementSyncer(this, gattQueue);
+        advertisementSyncer = new AdvertisementSyncer(this, gattQueue);
+        scanSyncer = new ScanSyncer(this, gattQueue);
 
         numberOfDaysLabel = findViewById(R.id.number_of_days);
         numberOfDaysSlider = findViewById(R.id.number_of_days_slider);
@@ -95,7 +99,7 @@ public class ClientActivity  extends AppCompatActivity implements Scanner.Scanne
         logger.i("Initializing advertisement transfer");
         showProgress();
         new Thread(() ->
-            syncer.sendRpis(
+            advertisementSyncer.sendRpis(
                     generator.generateAdvertisements(
                             (int) numberOfDaysSlider.getValue(),
                             (int) numberOfAdvertisementsSlider.getValue(),
@@ -117,6 +121,21 @@ public class ClientActivity  extends AppCompatActivity implements Scanner.Scanne
 
     public void initiateScanRecordTransfer(View view) {
         logger.i("Requesting scan record transfer");
+        showProgress();
+        new Thread(() ->
+            scanSyncer.readScans(
+                    gatt,
+                    logger,
+                    new GattQueue.GattFinishedCallback() {
+                        @Override
+                        public void onUpdate(int current, int total) {}
+
+                        @Override
+                        public void onFinished() {
+                            runOnUiThread(() -> hideProgress());
+                        }
+                    }))
+                .start();
     }
 
     @Override
@@ -147,6 +166,7 @@ public class ClientActivity  extends AppCompatActivity implements Scanner.Scanne
     @Override
     public void onGattConnected(BluetoothDevice device, BluetoothGatt gatt) {
         logger.i("GATT connected: " + device);
+        this.gatt = gatt;
         gatt.requestMtu((int) mtuSizeSlider.getValue());
     }
 
@@ -158,7 +178,7 @@ public class ClientActivity  extends AppCompatActivity implements Scanner.Scanne
     @Override
     public void onGattServicesDiscovered(BluetoothDevice device, BluetoothGatt gatt) {
         logger.i("GATT services discovered");
-        syncer.setGatt(gatt, (int) mtuSizeSlider.getValue());
+        advertisementSyncer.setGatt(gatt, (int) mtuSizeSlider.getValue());
         runOnUiThread(() -> {
             connectionStatusLabel.setText(R.string.connection_status_connected);
             transferAdvertisements.setEnabled(true);
@@ -175,6 +195,7 @@ public class ClientActivity  extends AppCompatActivity implements Scanner.Scanne
     @Override
     public void onGattDisconnected(BluetoothDevice device) {
         logger.i("GATT disconnected: " + device);
+        this.gatt = null;
         runOnUiThread(() -> {
             connectionStatusLabel.setText(R.string.connection_status_disconnected);
             transferAdvertisements.setEnabled(false);
@@ -202,6 +223,7 @@ public class ClientActivity  extends AppCompatActivity implements Scanner.Scanne
 
     private void showProgress() {
         transferProgress.setVisibility(View.VISIBLE);
+        transferProgress.setIndeterminate(true);
         transferButtonHolder.setVisibility(View.INVISIBLE);
         numberOfDaysSlider.setEnabled(false);
         numberOfAdvertisementsSlider.setEnabled(false);

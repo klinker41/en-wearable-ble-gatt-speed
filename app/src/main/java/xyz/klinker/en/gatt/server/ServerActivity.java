@@ -1,7 +1,6 @@
 package xyz.klinker.en.gatt.server;
 
 import android.bluetooth.BluetoothDevice;
-import android.bluetooth.BluetoothGattCharacteristic;
 import android.os.Bundle;
 import android.widget.TextView;
 
@@ -10,6 +9,7 @@ import androidx.appcompat.app.AppCompatActivity;
 import com.google.android.material.slider.Slider;
 
 import xyz.klinker.en.gatt.R;
+import xyz.klinker.en.gatt.util.GattQueue;
 import xyz.klinker.en.gatt.util.Logger;
 
 public class ServerActivity  extends AppCompatActivity implements Advertiser.AdvertiserCallback {
@@ -17,7 +17,10 @@ public class ServerActivity  extends AppCompatActivity implements Advertiser.Adv
     private static final String TAG = "ServerActivity";
 
     private Logger logger;
+    private GattQueue gattQueue;
     private Advertiser advertiser;
+    private ScanGenerator generator;
+    private ScanProvider syncer;
 
     private TextView numberOfScanRecordsLabel;
     private Slider numberOfScanRecordsSlider;
@@ -30,7 +33,10 @@ public class ServerActivity  extends AppCompatActivity implements Advertiser.Adv
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_server);
         logger = new Logger(this, TAG, findViewById(R.id.log));
-        advertiser = new Advertiser(this);
+        gattQueue = new GattQueue(logger);
+        advertiser = new Advertiser(this, gattQueue);
+        generator = new ScanGenerator();
+        syncer = new ScanProvider(this, gattQueue);
 
         numberOfScanRecordsLabel = findViewById(R.id.number_scan_records);
         numberOfScanRecordsSlider = findViewById(R.id.number_scan_records_slider);
@@ -80,8 +86,15 @@ public class ServerActivity  extends AppCompatActivity implements Advertiser.Adv
     @Override
     public void onGattConnected(BluetoothDevice device) {
         logger.i("GATT connected: " + device);
-        runOnUiThread(() ->
-                connectionStatusLabel.setText(R.string.connection_status_connected));
+        runOnUiThread(() -> {
+            connectionStatusLabel.setText(R.string.connection_status_connected);
+            numberOfScanRecordsSlider.setEnabled(false);
+            sizeOfScanRecordsSlider.setEnabled(false);
+        });
+        syncer.loadScans(
+                generator.generateScans(
+                        (int) numberOfScanRecordsSlider.getValue(),
+                        (int) sizeOfScanRecordsSlider.getValue()));
     }
 
     @Override
@@ -97,8 +110,12 @@ public class ServerActivity  extends AppCompatActivity implements Advertiser.Adv
     @Override
     public void onGattDisconnected(BluetoothDevice device) {
         logger.i("GATT disconnected: " + device);
-        runOnUiThread(() ->
-                connectionStatusLabel.setText(R.string.connection_status_disconnected));
+        runOnUiThread(() -> {
+            connectionStatusLabel.setText(R.string.connection_status_disconnected);
+            numberOfScanRecordsSlider.setEnabled(true);
+            sizeOfScanRecordsSlider.setEnabled(true);
+        });
+        syncer.clearScans();
     }
 
     private void initializeSliders() {

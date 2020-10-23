@@ -17,6 +17,9 @@ import android.content.Context;
 
 import androidx.annotation.Nullable;
 
+import xyz.klinker.en.gatt.util.GattQueue;
+
+import static android.bluetooth.BluetoothGatt.GATT_FAILURE;
 import static android.bluetooth.BluetoothGatt.GATT_SUCCESS;
 import static android.bluetooth.le.AdvertiseSettings.ADVERTISE_MODE_BALANCED;
 import static android.bluetooth.le.AdvertiseSettings.ADVERTISE_TX_POWER_MEDIUM;
@@ -29,12 +32,14 @@ final class Advertiser {
     private static final int ERROR_NO_ADAPTER = -1;
 
     private final Context context;
+    private final GattQueue gattQueue;
     @Nullable private AdvertiseCallback platformCallback;
     @Nullable private AdvertiserCallback callback;
     @Nullable private BluetoothGattServer server;
 
-    Advertiser(Context context) {
+    Advertiser(Context context, GattQueue gattQueue) {
         this.context = context;
+        this.gattQueue = gattQueue;
     }
 
     void beginAdvertising(AdvertiserCallback callback) {
@@ -101,7 +106,8 @@ final class Advertiser {
     private void createGattServer() {
         BluetoothManager manager =
                 (BluetoothManager) context.getSystemService(Context.BLUETOOTH_SERVICE);
-        AdvertiserGattServerCallback gattCallback = new AdvertiserGattServerCallback(callback);
+        AdvertiserGattServerCallback gattCallback =
+                new AdvertiserGattServerCallback(callback, gattQueue);
         BluetoothGattServer server = manager.openGattServer(context, gattCallback);
         BluetoothGattService service =
                 new BluetoothGattService(
@@ -124,10 +130,12 @@ final class Advertiser {
     private static class AdvertiserGattServerCallback extends BluetoothGattServerCallback {
 
         private final AdvertiserCallback callback;
+        private final GattQueue gattQueue;
         private  BluetoothGattServer server;
 
-        private AdvertiserGattServerCallback(AdvertiserCallback callback) {
+        private AdvertiserGattServerCallback(AdvertiserCallback callback, GattQueue gattQueue) {
             this.callback = callback;
+            this.gattQueue = gattQueue;
         }
 
         private void setBluetoothGattServer(BluetoothGattServer server) {
@@ -166,6 +174,14 @@ final class Advertiser {
                 BluetoothGattCharacteristic characteristic) {
             callback.onGattOperation(
                     device, "characteristicReadRequest", characteristic.getUuid().toString());
+            byte[] value = gattQueue.readIfNeeded();
+            if (value != null) {
+                server.sendResponse(device, requestId, GATT_SUCCESS, 0, value);
+                callback.onGattOperation(device, "sendingScan", "sent");
+            } else {
+                server.sendResponse(device, requestId, GATT_FAILURE, 0, null);
+                callback.onGattOperation(device, "finishedReadingScans", "done");
+            }
         }
 
         @Override

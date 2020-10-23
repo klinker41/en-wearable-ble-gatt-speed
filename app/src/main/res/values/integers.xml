@@ -6,7 +6,7 @@
     <integer name="server_default_scan_records">1000</integer>
     <integer name="server_min_record_size">0</integer>
     <integer name="server_max_record_size">31</integer>
-    <integer name="server_default_record_size">31</integer>
+    <integer name="server_default_record_size">20</integer>
     <integer name="server_step_size">1</integer>
 
     <!-- Client activity -->

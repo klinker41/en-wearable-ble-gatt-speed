@@ -34,6 +34,10 @@ public class GattQueue {
         requests.add(request);
     }
 
+    public synchronized void clear() {
+        requests.clear();
+    }
+
     public synchronized void start(@Nullable GattFinishedCallback callback) {
         this.callback = callback;
         totalRequests = requests.size();
@@ -70,6 +74,14 @@ public class GattQueue {
                 callback.onFinished();
             }
         }
+    }
+
+    @Nullable
+    public byte[] readIfNeeded() {
+        if (!requests.isEmpty()) {
+            return requests.poll();
+        }
+        return null;
     }
 
     public interface GattFinishedCallback {

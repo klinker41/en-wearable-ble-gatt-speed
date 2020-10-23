@@ -154,7 +154,6 @@ final class Scanner {
                     gatt.getDevice(),
                     "characteristicRead",
                     characteristic.getUuid().toString());
-            gattQueue.releaseNext();
         }
 
         @Override

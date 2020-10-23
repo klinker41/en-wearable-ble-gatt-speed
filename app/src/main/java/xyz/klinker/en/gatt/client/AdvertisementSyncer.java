@@ -41,7 +41,6 @@ final class AdvertisementSyncer {
             logger.e("Unable to send RPIs, MTU less than packet size");
             return;
         }
-        long startTime = System.currentTimeMillis();
         logger.i(
                 "Preparing to send "
                         + rpis.size()
