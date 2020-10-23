@@ -22,3 +22,6 @@ Transfer advertisements, 3 days, 144 per day, 20 bytes each | 512 | 11 kB | ~2 s
 Transfer advertisements, 14 days, 288 per day, 31 bytes each | 512 | 149 kB | ~20 s
 Transfer advertisements, 3 days, 144 per day, 20 bytes each | 30 | 11 kB | ~27 s
 Transfer advertisements, 14 days, 288 per day, 31 bytes each | 37 | 149 kB | ~491 s
+Transfer scans, 1000 records, 20 bytes each | 512 | 34 kB | ~5 s
+Transfer scans, 1000 records, 20 bytes each | 40 | 34 kB | ~60 s
+Transfer scans, 10000 records, 20 bytes each | 40 | 340 kB | ~603 s

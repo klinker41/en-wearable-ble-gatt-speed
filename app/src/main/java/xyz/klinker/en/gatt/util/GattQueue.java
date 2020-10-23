@@ -12,6 +12,8 @@ import static android.bluetooth.BluetoothGattCharacteristic.WRITE_TYPE_DEFAULT;
 import static xyz.klinker.en.gatt.util.Constants.SERVICE_UUID;
 import static xyz.klinker.en.gatt.util.Constants.WRITE_ADVERTISEMENTS_UUID;
 
+// This class is a bit of hodgepodge of reading and writing... It could use clean up if we actually
+// wanted to do something interesting with this code.
 public class GattQueue {
 
     private final Logger logger;
@@ -38,15 +40,33 @@ public class GattQueue {
         requests.clear();
     }
 
-    public synchronized void start(@Nullable GattFinishedCallback callback) {
+    public synchronized void startWrite(@Nullable GattFinishedCallback callback) {
         this.callback = callback;
         totalRequests = requests.size();
         startTime = System.currentTimeMillis();
         writeIfNeeded();
     }
 
-    public synchronized void releaseNext() {
+    public synchronized void startRead(@Nullable GattFinishedCallback callback) {
+        this.callback = callback;
+        startTime = System.currentTimeMillis();
+    }
+
+    public synchronized void releaseNextWrite() {
         writeIfNeeded();
+    }
+
+    public synchronized void releaseNextRead() {
+        if (callback != null) {
+            callback.onUpdate(0, 0);
+        }
+    }
+
+    public synchronized void finishedReading() {
+        logger.i("Finished reading scans in " + (System.currentTimeMillis() - startTime) + " ms");
+        if (callback != null) {
+            callback.onFinished();
+        }
     }
 
     private synchronized void writeIfNeeded() {
@@ -79,7 +99,13 @@ public class GattQueue {
     @Nullable
     public byte[] readIfNeeded() {
         if (!requests.isEmpty()) {
+            if (callback != null) {
+                callback.onUpdate(0, 0);
+            }
             return requests.poll();
+        }
+        if (callback != null) {
+            callback.onFinished();
         }
         return null;
     }

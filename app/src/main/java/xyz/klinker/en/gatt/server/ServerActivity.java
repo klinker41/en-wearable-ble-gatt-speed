@@ -91,15 +91,17 @@ public class ServerActivity  extends AppCompatActivity implements Advertiser.Adv
             numberOfScanRecordsSlider.setEnabled(false);
             sizeOfScanRecordsSlider.setEnabled(false);
         });
-        syncer.loadScans(
-                generator.generateScans(
-                        (int) numberOfScanRecordsSlider.getValue(),
-                        (int) sizeOfScanRecordsSlider.getValue()));
     }
 
     @Override
     public void onGattMtuChanged(BluetoothDevice device, int mtu) {
         logger.i("GATT MTU changed: " + mtu);
+        syncer.loadScans(
+                generator.generateScans(
+                        (int) numberOfScanRecordsSlider.getValue(),
+                        (int) sizeOfScanRecordsSlider.getValue()),
+                mtu,
+                logger);
     }
 
     @Override

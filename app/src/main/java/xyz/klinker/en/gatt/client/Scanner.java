@@ -23,6 +23,7 @@ import java.util.Set;
 
 import xyz.klinker.en.gatt.util.GattQueue;
 
+import static android.bluetooth.BluetoothGatt.GATT_SUCCESS;
 import static android.bluetooth.le.ScanSettings.SCAN_MODE_BALANCED;
 import static xyz.klinker.en.gatt.util.Constants.SERVICE_UUID;
 
@@ -154,6 +155,11 @@ final class Scanner {
                     gatt.getDevice(),
                     "characteristicRead",
                     characteristic.getUuid().toString());
+            if (status == GATT_SUCCESS) {
+                gattQueue.releaseNextRead();
+            } else {
+                gattQueue.finishedReading();
+            }
         }
 
         @Override
@@ -163,7 +169,7 @@ final class Scanner {
                     gatt.getDevice(),
                     "characteristicWrite",
                     characteristic.getUuid().toString() + ", " + characteristic.getValue().length);
-            gattQueue.releaseNext();
+            gattQueue.releaseNextWrite();
         }
 
         @Override

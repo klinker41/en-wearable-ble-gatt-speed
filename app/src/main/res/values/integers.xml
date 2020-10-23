@@ -2,7 +2,7 @@
 <resources>
     <!-- Server activity -->
     <integer name="server_min_scan_records">0</integer>
-    <integer name="server_max_scan_records">2000</integer>
+    <integer name="server_max_scan_records">10000</integer>
     <integer name="server_default_scan_records">1000</integer>
     <integer name="server_min_record_size">0</integer>
     <integer name="server_max_record_size">31</integer>

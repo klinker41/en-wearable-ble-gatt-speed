@@ -20,11 +20,24 @@ final class ScanSyncer {
     }
 
     void readScans(BluetoothGatt gatt, Logger logger, GattQueue.GattFinishedCallback callback) {
-        // TODO(jklinker): Read characteristic multiple times until finished.
+        gattQueue.startRead(new GattQueue.GattFinishedCallback() {
+            @Override
+            public void onUpdate(int current, int total) {
+                readCharacteristic(logger, gatt);
+            }
+
+            @Override
+            public void onFinished() {
+                callback.onFinished();
+            }
+        });
+        readCharacteristic(logger, gatt);
+    }
+
+    private void readCharacteristic(Logger logger, BluetoothGatt gatt) {
         boolean result =
                 gatt.readCharacteristic(
                         gatt.getService(SERVICE_UUID.getUuid()).getCharacteristic(READ_SCANS_UUID));
-        logger.i("Read characteristic with result " + result);
-        callback.onFinished();
+        logger.v("Read characteristic with result " + result);
     }
 }

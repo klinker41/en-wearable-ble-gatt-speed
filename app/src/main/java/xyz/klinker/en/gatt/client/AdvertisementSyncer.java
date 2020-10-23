@@ -63,7 +63,7 @@ final class AdvertisementSyncer {
             currentLength += rpi.length;
         }
         enqueueCurrentWriteRequest(writeRequest, currentLength);
-        gattQueue.start(callback);
+        gattQueue.startWrite(callback);
     }
 
     private void enqueueCurrentWriteRequest(byte[] writeRequest, int currentLength) {
